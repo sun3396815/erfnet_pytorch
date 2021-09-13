@@ -1,6 +1,10 @@
+import random
+
+import cv2
 import numpy as np
 import os
 
+import torch
 from PIL import Image
 
 from torch.utils.data import Dataset
@@ -57,8 +61,6 @@ class VOC12(Dataset):
         return len(self.filenames)
 
 
-
-
 class cityscapes(Dataset):
 
     def __init__(self, root, co_transform=None, subset='train'):
@@ -98,3 +100,62 @@ class cityscapes(Dataset):
     def __len__(self):
         return len(self.filenames)
 
+
+class AutoVpDataset(Dataset):
+    def __init__(self, label_file_path, root_dir, length=0):
+        self.length = length
+        self.root_dir = root_dir
+        with open(label_file_path, 'r') as label:
+            self.data = [x.strip().split('\t') for x in label.readlines()]
+
+    def __getitem__(self, index):
+        image = cv2.imread(self.root_dir + self.data[index][0])
+        image = cv2.resize(image, (820, 295)).astype(np.float)
+        image /= 255
+        image -= 0.5
+        # cv2.imshow("resized image", image)
+        label = np.load(self.root_dir + self.data[index][1])
+        label = cv2.resize(label, (820, 295))
+        # cv2.imshow("resized label", label)
+
+        horizontal_flip = random.randint(0, 1)
+        vertical_shift = random.randint(0, 1)
+        if horizontal_flip == 0:
+            image = image[:, ::-1, :].copy()  # it will cause memory discontinuous after channel changing
+            label = label[:, ::-1].copy()
+            # cv2.imshow("flipped image", image)
+            # cv2.imshow("flipped label", label)
+        if vertical_shift == 0:
+            vy = int(float(self.data[index][3]) / 2)
+            offset = random.randint(-vy, 295 - vy)
+            if offset <= 0:
+                y_new1 = 0
+                y_new2 = 295 - 1 + offset
+                y_old1 = -offset
+                y_old2 = 295 - 1
+            else:
+                y_new1 = offset
+                y_new2 = 295 - 1
+                y_old1 = 0
+                y_old2 = 295 - offset - 1
+
+            shifted_image = np.zeros_like(image)
+            shifted_label = np.zeros_like(label)
+            shifted_image[y_new1:y_new2, :, :] = image[y_old1: y_old2, :, :]
+            shifted_label[y_new1:y_new2, :] = label[y_old1: y_old2, :]
+            image = shifted_image
+            label = shifted_label
+            # cv2.imshow("shifted image", image)
+            # cv2.imshow("shifted label", label)
+            # cv2.waitKey()
+        image = image.transpose((2, 0, 1))
+        label = label[np.newaxis, :, :]
+
+        return torch.from_numpy(image).float(), torch.from_numpy(label).float()
+
+    def __len__(self):
+        if self.length > 0:
+            return self.length
+        else:
+            return len(self.data)
+        #return 10
