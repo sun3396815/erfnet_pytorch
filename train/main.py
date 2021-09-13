@@ -166,9 +166,13 @@ def train(args, model, enc=False):
             usedLr = float(param_group['lr'])
 
         model.train()
+        end_time = -1
         for step, (images, labels) in enumerate(loader):
 
             start_time = time.time()
+            # if end_time > 0:
+                # print(f'it took {str(start_time - end_time)} seconds to load data!')
+
             #print (labels.size())
             #print (np.unique(labels.numpy()))
             #print("labels: ", np.unique(labels[0].numpy()))
@@ -223,6 +227,7 @@ def train(args, model, enc=False):
                 average = sum(epoch_loss) / len(epoch_loss)
                 print(f'loss: {average:0.4} (epoch: {epoch}, step: {step})', 
                         "// Avg time/img: %.4f s" % (sum(time_train) / len(time_train) / args.batch_size))
+            # end_time = time.time()
 
             
         average_epoch_loss_train = sum(epoch_loss) / len(epoch_loss)
@@ -272,7 +277,7 @@ def train(args, model, enc=False):
                 _, peak_tar_index = torch.max(reshaped_targets, 1)
                 ox, oy, tx, ty = peak_out_index % tw, peak_out_index // th, peak_tar_index % tw, peak_tar_index % th
                 norm_dist = ((ox - tx) ** 2 + (tx - ty) ** 2) ** 0.5 / (tw ** 2 + th ** 2) ** 0.5
-                norm_dist_val.append(np.array(norm_dist.cpu()))
+                norm_dist_val += norm_dist.cpu()
 
                 #Add batch to calculate TP, FP and FN for iou estimation
                 if (doIouVal):
@@ -468,7 +473,7 @@ if __name__ == '__main__':
     parser.add_argument('--datadir', default=os.getenv("HOME") + "/datasets/cityscapes/")
     parser.add_argument('--height', type=int, default=512)
     parser.add_argument('--num-epochs', type=int, default=150)
-    parser.add_argument('--num-workers', type=int, default=0)
+    parser.add_argument('--num-workers', type=int, default=16)
     parser.add_argument('--batch-size', type=int, default=32)
     parser.add_argument('--steps-loss', type=int, default=50)
     parser.add_argument('--steps-plot', type=int, default=50)

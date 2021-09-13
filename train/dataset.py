@@ -121,7 +121,7 @@ class AutoVpDataset(Dataset):
         horizontal_flip = random.randint(0, 1)
         vertical_shift = random.randint(0, 1)
         if horizontal_flip == 0:
-            image = image[:, ::-1, :].copy()  # it will cause memory discontinuous after channel changing
+            image = image[:, ::-1, :].copy()  # it will cause memory discontinuous after channel changing, .copy() is necessary
             label = label[:, ::-1].copy()
             # cv2.imshow("flipped image", image)
             # cv2.imshow("flipped label", label)
@@ -158,4 +158,4 @@ class AutoVpDataset(Dataset):
             return self.length
         else:
             return len(self.data)
-        #return 10
+        # return 36
