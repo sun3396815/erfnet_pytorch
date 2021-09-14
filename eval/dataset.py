@@ -5,6 +5,8 @@
 
 import numpy as np
 import os
+import cv2
+import torch
 
 from PIL import Image
 
@@ -98,3 +100,31 @@ class cityscapes(Dataset):
     def __len__(self):
         return len(self.filenames)
 
+
+class AutoVpDataset(Dataset):
+    def __init__(self, label_file_path, root_dir, length=0):
+        self.length = length
+        self.root_dir = root_dir
+        with open(label_file_path, 'r') as label:
+            self.data = [x.strip().split('\t') for x in label.readlines()]
+
+    def __getitem__(self, index):
+        image = cv2.imread(self.root_dir + self.data[index][0])
+        image = cv2.resize(image, (820, 295)).astype(np.float)
+        image /= 255
+        image -= 0.5
+        # cv2.imshow("resized image", image)
+        label = np.load(self.root_dir + self.data[index][1])
+        label = cv2.resize(label, (820, 295))
+
+        image = image.transpose((2, 0, 1))
+        label = label[np.newaxis, :, :]
+
+        return torch.from_numpy(image).float(), torch.from_numpy(label).float()
+
+    def __len__(self):
+        if self.length > 0:
+            return self.length
+        else:
+            return len(self.data)
+        # return 36
