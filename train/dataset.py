@@ -102,9 +102,10 @@ class cityscapes(Dataset):
 
 
 class AutoVpDataset(Dataset):
-    def __init__(self, label_file_path, root_dir, length=0):
+    def __init__(self, label_file_path, root_dir, length=0, train=True):
         self.length = length
         self.root_dir = root_dir
+        self.train = train
         with open(label_file_path, 'r') as label:
             self.data = [x.strip().split('\t') for x in label.readlines()]
 
@@ -118,36 +119,37 @@ class AutoVpDataset(Dataset):
         label = cv2.resize(label, (820, 295))
         # cv2.imshow("resized label", label)
 
-        horizontal_flip = random.randint(0, 1)
-        vertical_shift = random.randint(0, 1)
-        if horizontal_flip == 0:
-            image = image[:, ::-1, :].copy()  # it will cause memory discontinuous after channel changing, .copy() is necessary
-            label = label[:, ::-1].copy()
-            # cv2.imshow("flipped image", image)
-            # cv2.imshow("flipped label", label)
-        if vertical_shift == 0:
-            vy = int(float(self.data[index][3]) / 2)
-            offset = random.randint(-vy, 295 - vy)
-            if offset <= 0:
-                y_new1 = 0
-                y_new2 = 295 - 1 + offset
-                y_old1 = -offset
-                y_old2 = 295 - 1
-            else:
-                y_new1 = offset
-                y_new2 = 295 - 1
-                y_old1 = 0
-                y_old2 = 295 - offset - 1
+        if self.train:
+            horizontal_flip = random.randint(0, 1)
+            vertical_shift = random.randint(0, 1)
+            if horizontal_flip == 0:
+                image = image[:, ::-1, :].copy()  # it will cause memory discontinuous after channel changing, .copy() is necessary
+                label = label[:, ::-1].copy()
+                # cv2.imshow("flipped image", image)
+                # cv2.imshow("flipped label", label)
+            if vertical_shift == 0:
+                vy = int(float(self.data[index][3]) / 2)
+                offset = random.randint(-vy, 295 - vy)
+                if offset <= 0:
+                    y_new1 = 0
+                    y_new2 = 295 - 1 + offset
+                    y_old1 = -offset
+                    y_old2 = 295 - 1
+                else:
+                    y_new1 = offset
+                    y_new2 = 295 - 1
+                    y_old1 = 0
+                    y_old2 = 295 - offset - 1
 
-            shifted_image = np.zeros_like(image)
-            shifted_label = np.zeros_like(label)
-            shifted_image[y_new1:y_new2, :, :] = image[y_old1: y_old2, :, :]
-            shifted_label[y_new1:y_new2, :] = label[y_old1: y_old2, :]
-            image = shifted_image
-            label = shifted_label
-            # cv2.imshow("shifted image", image)
-            # cv2.imshow("shifted label", label)
-            # cv2.waitKey()
+                shifted_image = np.zeros_like(image)
+                shifted_label = np.zeros_like(label)
+                shifted_image[y_new1:y_new2, :, :] = image[y_old1: y_old2, :, :]
+                shifted_label[y_new1:y_new2, :] = label[y_old1: y_old2, :]
+                image = shifted_image
+                label = shifted_label
+                # cv2.imshow("shifted image", image)
+                # cv2.imshow("shifted label", label)
+                # cv2.waitKey()
         image = image.transpose((2, 0, 1))
         label = label[np.newaxis, :, :]
 

@@ -92,7 +92,7 @@ def train(args, model, enc=False):
     # co_transform = MyCoTransform(enc, augment=True, height=args.height)#1024)
     # co_transform_val = MyCoTransform(enc, augment=False, height=args.height)#1024)
     dataset_train = AutoVpDataset("/mnt/data3/CULaneSlim/train_heatmap.txt", '/mnt/data3/CULaneSlim/')
-    dataset_val = AutoVpDataset('/mnt/data3/CULaneSlim/test_heatmap.txt', '/mnt/data3/CULaneSlim/')
+    dataset_val = AutoVpDataset('/mnt/data3/CULaneSlim/test_heatmap.txt', '/mnt/data3/CULaneSlim/', train=False)
 
     loader = DataLoader(dataset_train, num_workers=args.num_workers, batch_size=args.batch_size, shuffle=True)
     loader_val = DataLoader(dataset_val, num_workers=args.num_workers, batch_size=args.batch_size, shuffle=False)
@@ -275,8 +275,8 @@ def train(args, model, enc=False):
                 reshaped_targets = targets.reshape((targets.shape[0], -1))
                 _, peak_out_index = torch.max(reshaped_outputs, 1)
                 _, peak_tar_index = torch.max(reshaped_targets, 1)
-                ox, oy, tx, ty = peak_out_index % tw, peak_out_index // th, peak_tar_index % tw, peak_tar_index % th
-                norm_dist = ((ox - tx) ** 2 + (tx - ty) ** 2) ** 0.5 / (tw ** 2 + th ** 2) ** 0.5
+                ox, oy, tx, ty = peak_out_index % tw, peak_out_index // tw, peak_tar_index % tw, peak_tar_index // tw
+                norm_dist = ((ox - tx) ** 2 + (oy - ty) ** 2) ** 0.5 / (tw ** 2 + th ** 2) ** 0.5
                 norm_dist_val += norm_dist.cpu()
 
                 #Add batch to calculate TP, FP and FN for iou estimation
@@ -485,6 +485,6 @@ if __name__ == '__main__':
 
     parser.add_argument('--iouTrain', action='store_true', default=False) #recommended: False (takes more time to train otherwise)
     parser.add_argument('--iouVal', action='store_true', default=False)
-    parser.add_argument('--resume', action='store_true')    #Use this flag to load last checkpoint for training  
+    parser.add_argument('--resume', action='store_true', default=True)    #Use this flag to load last checkpoint for training  
 
     main(parser.parse_args())
