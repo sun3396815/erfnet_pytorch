@@ -71,15 +71,15 @@ class Encoder(nn.Module):
         self.layers.append(DownsamplerBlock(16,64))
 
         for x in range(0, 5):    #5 times
-           self.layers.append(non_bottleneck_1d(64, 0.1, 1))  
+           self.layers.append(non_bottleneck_1d(64, 0, 1))  
 
         self.layers.append(DownsamplerBlock(64,128))
 
         for x in range(0, 2):    #2 times
-            self.layers.append(non_bottleneck_1d(128, 0.1, 2))
-            self.layers.append(non_bottleneck_1d(128, 0.1, 4))
-            self.layers.append(non_bottleneck_1d(128, 0.1, 8))
-            self.layers.append(non_bottleneck_1d(128, 0.1, 16))
+            self.layers.append(non_bottleneck_1d(128, 0, 2))
+            self.layers.append(non_bottleneck_1d(128, 0, 4))
+            self.layers.append(non_bottleneck_1d(128, 0, 8))
+            self.layers.append(non_bottleneck_1d(128, 0, 16))
 
         #only for encoder mode:
         self.output_conv = nn.Conv2d(128, num_classes, 1, stride=1, padding=0, bias=True)

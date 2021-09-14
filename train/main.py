@@ -257,7 +257,7 @@ def train(args, model, enc=False):
 
                 inputs = Variable(images, volatile=True)    #volatile flag makes it free backward or outputs for eval
                 targets = Variable(labels, volatile=True)
-                outputs = model(inputs, only_encode=enc)
+                outputs = model(inputs, only_encode=enc, isTraining=False)
 
                 _, _, th, tw = targets.shape
                 _, _, oh, ow = outputs.shape

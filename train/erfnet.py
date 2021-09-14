@@ -16,7 +16,7 @@ class DownsamplerBlock (nn.Module):
         self.pool = nn.MaxPool2d(2, stride=2, ceil_mode=True)
         self.bn = nn.BatchNorm2d(noutput, eps=1e-3)
 
-    def forward(self, input):
+    def forward(self, input, isTraining=True):
         output = torch.cat([self.conv(input), self.pool(input)], 1)
         output = self.bn(output)
         return F.relu(output)
@@ -41,7 +41,7 @@ class non_bottleneck_1d (nn.Module):
         self.dropout = nn.Dropout2d(dropprob)
         
 
-    def forward(self, input):
+    def forward(self, input, isTraining=True):
 
         output = self.conv3x1_1(input)
         output = F.relu(output)
@@ -54,7 +54,7 @@ class non_bottleneck_1d (nn.Module):
         output = self.conv1x3_2(output)
         output = self.bn2(output)
 
-        if (self.dropout.p != 0):
+        if (self.dropout.p != 0) and isTraining:
             output = self.dropout(output)
         
         return F.relu(output+input)    #+input = identity (residual connection)
@@ -83,11 +83,11 @@ class Encoder(nn.Module):
         #Only in encoder mode:
         self.output_conv = nn.Conv2d(128, num_classes, 1, stride=1, padding=0, bias=True)
 
-    def forward(self, input, predict=False):
+    def forward(self, input, predict=False, isTraining=True):
         output = self.initial_block(input)
 
         for layer in self.layers:
-            output = layer(output)
+            output = layer(output, isTraining=isTraining)
 
         if predict:
             output = self.output_conv(output)
@@ -143,9 +143,9 @@ class Net(nn.Module):
             self.encoder = encoder
         self.decoder = Decoder(num_classes)
 
-    def forward(self, input, only_encode=False):
+    def forward(self, input, only_encode=False, isTraining=True):
         if only_encode:
-            return self.encoder.forward(input, predict=True)
+            return self.encoder.forward(input, predict=True, isTraining=isTraining)
         else:
-            output = self.encoder(input)    #predict=False by default
+            output = self.encoder(input, isTraining=isTraining)    #predict=False by default
             return self.decoder.forward(output)

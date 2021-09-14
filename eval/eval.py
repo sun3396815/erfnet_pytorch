@@ -1,7 +1,9 @@
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = '4'
+
 import cv2
 import numpy as np
 import torch
-import os
 import importlib
 
 from PIL import Image
@@ -23,7 +25,7 @@ NUM_CLASSES = 1
 
 def main(args):
 
-    weightspath = "/media/sunhuibo/data/Work/src/erfnet_pytorch/ckpt/last.pth.tar"
+    weightspath = "/mnt/data3/erfnet_pytorch/save/auto_vp/checkpoint.pth.tar"
 
     #Import ERFNet model from the folder
     #Net = importlib.import_module(modelpath.replace("/", "."), "ERFNet")
@@ -44,7 +46,8 @@ def main(args):
             own_state[name].copy_(param)
         return m
 
-    model = load_my_state_dict(model, torch.load(weightspath))
+    # model = load_my_state_dict(model, torch.load(weightspath))
+    model.load_state_dict(torch.load(weightspath)['state_dict'])
     print("Model and weights LOADED successfully")
 
     model.eval()
@@ -53,7 +56,7 @@ def main(args):
         print("Error: datadir could not be loaded")
 
     # TODO: remove param root_dir
-    loader = DataLoader(AutoVpDataset(args.datadir, "/media/sunhuibo/data/Work/data/3rdparty/CULaneSlim/"),
+    loader = DataLoader(AutoVpDataset(args.datadir, "/mnt/data3/CULaneSlim/"),
         num_workers=args.num_workers, batch_size=args.batch_size, shuffle=False)
 
     # For visualizer:
@@ -67,7 +70,7 @@ def main(args):
             images = images.cuda()
             labels = labels.cuda()
 
-        cv2.imshow("gt heat map", np.array(labels.cpu()[0][0]) * 255)
+        # cv2.imshow("gt heat map", np.array(labels.cpu()[0][0]) * 255)
 
         inputs = Variable(images)
         #targets = Variable(labels)
@@ -91,11 +94,11 @@ def main(args):
 
         original_image = np.array((images[0].cpu() + 0.5) * 255, dtype=np.uint8)
         original_image = original_image.transpose((1, 2, 0)).copy()  # c,h,w to h,w,c
-        cv2.drawMarker(original_image, np.int32((ox, oy)), (0, 255, 0), thickness=2)
-        cv2.drawMarker(original_image, np.int32((tx, ty)), (0, 0, 255), thickness=2)
+        # cv2.drawMarker(original_image, np.int32((ox, oy)), (0, 255, 0), thickness=2)
+        # cv2.drawMarker(original_image, np.int32((tx, ty)), (0, 0, 255), thickness=2)
 
-        cv2.imshow("original image", original_image)
-        cv2.waitKey()
+        # cv2.imshow("original image", original_image)
+        # cv2.waitKey()
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -107,7 +110,7 @@ if __name__ == '__main__':
     parser.add_argument('--loadModel', default="erfnet.py")
     parser.add_argument('--subset', default="val")  #can be val, test, train, demoSequence
 
-    parser.add_argument('--datadir', default="/media/sunhuibo/data/Work/data/3rdparty/CULaneSlim/test_heatmap.txt")
+    parser.add_argument('--datadir', default="/mnt/data3/CULaneSlim/test_heatmap.txt")
     parser.add_argument('--num-workers', type=int, default=0)
     parser.add_argument('--batch-size', type=int, default=1)
     parser.add_argument('--cpu', action='store_true', default=False)
